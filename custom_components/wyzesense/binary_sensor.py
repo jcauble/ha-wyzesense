@@ -1,7 +1,7 @@
 """ 
 
 wyzesense integration
-v0.0.9
+v0.0.12
 
 """
 
@@ -20,9 +20,9 @@ from homeassistant.const import CONF_FILENAME, CONF_DEVICE, \
     ATTR_STATE, ATTR_DEVICE_CLASS, DEVICE_CLASS_TIMESTAMP
 
 try:
-    from homeassistant.components.binary_sensor import PLATFORM_SCHEMA, BinarySensorEntity, DEVICE_CLASS_MOTION, DEVICE_CLASS_DOOR
+    from homeassistant.components.binary_sensor import PLATFORM_SCHEMA, BinarySensorEntity, BinarySensorDeviceClass
 except ImportError:
-    from homeassistant.components.binary_sensor import BinarySensorDevice as BinarySensorEntity, PLATFORM_SCHEMA, DEVICE_CLASS_MOTION, DEVICE_CLASS_DOOR
+    from homeassistant.components.binary_sensor import BinarySensorDevice as BinarySensorEntity, PLATFORM_SCHEMA, BinarySensorDeviceClass
 
 from homeassistant.helpers.restore_state import RestoreEntity
 
@@ -87,7 +87,7 @@ def setup_platform(hass, config, add_entites, discovery_info=None):
                 ATTR_AVAILABLE: True,
                 ATTR_MAC: event.MAC,
                 ATTR_STATE: 1 if sensor_state == "open" or sensor_state == "active" else 0,
-                ATTR_DEVICE_CLASS: DEVICE_CLASS_MOTION if sensor_type == "motion" else DEVICE_CLASS_DOOR ,
+                ATTR_DEVICE_CLASS: BinarySensorDeviceClass.MOTION if sensor_type == "motion" else BinarySensorDeviceClass.DOOR ,
                 DEVICE_CLASS_TIMESTAMP: event.Timestamp.isoformat(),
                 ATTR_RSSI: sensor_signal * -1,
                 ATTR_BATTERY_LEVEL: sensor_battery
@@ -107,11 +107,7 @@ def setup_platform(hass, config, add_entites, discovery_info=None):
                 
             else:
                 entities[event.MAC]._data = data
-                # From https://github.com/kevinvincent/ha-wyzesense/issues/189
-                try:
-                    entities[event.MAC].schedule_update_ha_state()
-                except (AttributeError, AssertionError):
-                    _LOGGER.debug("wyze Sensor not yet ready for update")
+                entities[event.MAC].schedule_update_ha_state()
 
     @retry(TimeoutError, tries=10, delay=1, logger=_LOGGER)
     def beginConn():
